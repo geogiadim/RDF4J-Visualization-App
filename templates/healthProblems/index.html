@@ -1,0 +1,192 @@
+{%  extends 'healthProblems/base.html' %}
+{% load static %}
+
+{% block js-css %}
+{% endblock %}
+
+{% block content %}
+    <section class="container-lg">
+        <section class="row mt-3">
+            <div class="col-lg-12">
+                <div class="card mt-3" style="margin-bottom: 1.5rem;">
+                    <div class="card-header" style="background-color: white;">
+                        <div class="card-title">
+                            <h4>Data Series Picker</h4>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <form action='' method="POST" id="data-series-form"> {% csrf_token %}
+                            <div class="row">
+                                <div class="d-flex flex-column col-sm-12 col-md-4">
+                                    <label for="patient_selector">Patient*</label>
+                                    <select class="selectpicker form-control" name="patient_selector" id="patient_selector" data-live-search="true" required>
+                                        <option value="TMS6"> TMS6</option>
+                                        <option value="TMS7"> TMS7</option>
+                                    </select>
+                                </div>
+                                <div class="d-flex flex-column col-sm-12 col-md-4">
+                                    <label for="problem_selector">Problem Type*</label>
+                                    <select class="selectpicker form-control" name="problem_selector" id="problem_selector" data-live-search="true" data-selected-text-format="count > 2" multiple required>
+                                        <option value="sleep">Sleep Problem</option>
+                                        <option value="movement">Movement Problem</option>
+                                        <option value="heartrate">Heartrate Problem</option>
+                                    </select>
+                                </div>
+                                <div class="d-flex flex-column col-sm-12 col-md-4">
+                                    <label for="date_picker">Date Range*</label>
+                                    <input type="date" class="form-control" id="date_picker" name="date_picker" required>
+                                </div>
+                            </div>
+                            <div class="form-row float-end mt-3">
+                                <div class="col-sm-12">
+                                    <button class="btn btn-primary" type="submit" name="graphdb-button" id="graphdb-button">PLOT</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+{#                <figure class="highcharts-figure">#}
+{#                    <div id="container-chart"></div>#}
+{#                </figure>#}
+
+                <div id='sleep-problems-container' class="col-sm-12 p-0 m-0" style='min-height: 200px;'></div>
+                <div id='heartRate-problems-container' class="col-sm-12 p-0 m-0" style='min-height: 200px;'></div>
+                <div id='movement-problems-container' class="col-sm-12 p-0 m-0" style='min-height: 200px;'></div>
+            </div>
+        </section>
+    </section>
+
+
+    <!-- Scripts -->
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="https://code.highcharts.com/modules/exporting.js"></script>
+    <script src="https://code.highcharts.com/modules/export-data.js"></script>
+    <script src="https://code.highcharts.com/modules/accessibility.js"></script>
+    <script>
+        const selectPicker = $('.selectpicker');
+        $(function() {
+            selectPicker.selectpicker();
+        });
+
+        const patientURI = "http://www.semanticweb.org/patient-observations#";
+        const problemURI = "http://www.semanticweb.org/patient-observations#";
+
+        var selectProblemsQuery = "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n" +
+                    "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n" +
+                    "PREFIX pob1: <http://www.semanticweb.org/patient-observations/1.0.0#> \n" +
+                    "PREFIX pob:<http://www.semanticweb.org/patient-observations#>\n" +
+                    "PREFIX sosa: <http://www.w3.org/ns/sosa/> \n" +
+                    "PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>\n" +
+                    "PREFIX xml: <http://www.w3.org/XML/1998/namespace>\n" +
+                    "SELECT *\n" +
+                    "WHERE{\n" +
+                    "    ?problem a pob:SleepProblem;\n" +
+                    "       pob:isProblemOf ?patient;\n" +
+                    "       pob:rate ?rate;\n" +
+                    "       sosa:resultTime ?date.\n" +
+                    "}";
+
+        var getData = {
+            query: selectProblemsQuery,
+            infer: true,
+            sameAs: true,
+            limit: 1000,
+            offset: 0
+        }
+
+        var endpoint = "http://localhost/repositories/rdf4j-repo";
+        $("#graphdb-button").click(function (e) {
+            $.ajax({
+                type: 'GET',
+                url: endpoint,
+                data: getData,
+                contentType: "application/rdf+json",
+                crossDomain: true,
+                success: function (data) {
+                    console.log(data);
+                    processData(data);
+                },
+                error: function (response) {
+                }
+            });
+        });
+        var patients = [];
+        var rates = [];
+        var dates = [];
+
+        function processData(allText) {
+            var allTextLines = allText.split(/\r\n|\n/);
+            var lines = [];
+
+            for(let i=1; i<allTextLines.length;i++){
+                lines.push(allTextLines[i].split(','));
+            }
+
+            for(let i=0; i<lines.length-1;i++){
+                lines[i][1] = lines[i][1].replace(patientURI,'');
+                lines[i][0] = lines[i][0].replace(problemURI,'');
+                patients.push(lines[i][1]);
+                rates.push(parseFloat(lines[i][2]));
+                dates.push(lines[i][3]);
+            }
+
+            for(let i=0; i<patients.length;i++){
+                console.log(patients[i], rates[i], dates[i])
+            }
+        }
+
+        // handle form submition
+        $("#data-series-form").submit(function (e) {
+            e.preventDefault();
+            user_value = $('#patient_selector').val();
+            problem_values = $('#problem_selector').val();
+            date_range = $('#date_picker').val();
+            setTimeout(function () {
+                renderCharts(user_value, problem_values, date_range, 'sleep-problems');
+            }, 250);
+
+        });
+
+        window['sleep-problems-container'] = $('#sleep-problems-container');
+        window['heartRate-problems-container'] = $('#heartRate-problems-container');
+        window['movement-problems-container'] = $('#movement-problems-container');
+
+        const CancelToken = axios.CancelToken;
+        let cancel;
+        async function renderCharts(user_value, problem_values, date_range, model) {
+            try {
+                window[model + '-container'].html('<div class="card p-5 my-3"><div class="card-body"><div class="d-flex justify-content-center align-items-center "><div class="spinner-grow" style="color: #17a2b8; width: 5rem; height: 5rem;" role="status"><span class="sr-only">Loading...</span></div></div></div></div>')
+
+                paramss = `?userVal=${user_value}&probVal=${problem_values}&dateRange=${date_range}&model=${model}`
+
+                if (model === 'sleep-problems')
+                    response = await axios.get("{% url 'chart-render' %}" + paramss, {
+                        cancelToken: new CancelToken(function executor(c) {
+                            cancel = c;
+                        })
+                    });
+                else if (model === 'heartRate-problems')
+                    response = await axios.get("{% url 'chart-render' %}" + paramss, {
+                        cancelToken: new CancelToken(function executor(c) {
+                            cancel = c;
+                        })
+                    });
+                else if (model === 'movement-problems')
+                    response = await axios.get("{% url 'chart-render' %}" + paramss, {
+                        cancelToken: new CancelToken(function executor(c) {
+                            cancel = c;
+                        })
+                    });
+
+
+                window[model + '-container'].html(response.data);
+                $('canvas').height('500px');
+            }
+            catch (error) {
+                console.log(error);
+            }
+        }
+
+    </script>
+{% endblock %}

@@ -1,0 +1,105 @@
+<style>
+.highcharts-axis-title{
+    font-size: 18px;
+}
+#{{ model }}-chart-container {
+    min-height: 400px;
+    max-height: 1000px;
+}
+
+.highcharts-data-table table {
+    border-collapse: collapse;
+    border-spacing: 0;
+    background: white;
+    min-width: 100%;
+    margin-top: 10px;
+    font-family: sans-serif;
+    font-size: 0.9em;
+}
+.highcharts-data-table td, .highcharts-data-table th, .highcharts-data-table caption {
+    border: 1px solid silver;
+    padding: 0.5em;
+}
+.highcharts-data-table tr:nth-child(even), .highcharts-data-table thead tr {
+    background: #f8f8f8;
+}
+.highcharts-data-table tr:hover {
+    background: #eff;
+}
+.highcharts-data-table caption {
+    display: none;
+}
+
+</style>
+
+<div class="card" style="margin-bottom: 1.5rem;">
+    <div class="card-header d-flex justify-content-between" style="background-color: white">
+        {% if data %}
+            <h4>{{ model_name }}</h4>
+        {% else %}
+            <h5>{{ model_name }} | No data was found for given choices</h5>
+        {%endif%}
+    </div>
+    <div class="card-body">
+{#        {% for sub, atts in grouped_data.items %}{% for att in atts %}{% for event in att.event_set.all %}{{ forloop.parentloop.parentloop.counter }}{{ event.input_type }}: {{ event.duration }}<br>{% endfor %}{% endfor %}{% endfor %}#}
+        <div id="{{ model }}-chart-container">
+            <canvas id="{{ model }}-chart"></canvas>
+        </div>
+        <div id="chart"></div>
+    </div>
+</div>
+
+<script>
+window['{{model}}'] = document.getElementById("{{model}}-chart-container");
+Highcharts.chart(window['{{ model }}'], {
+chart: {
+    type: 'column'
+},
+title: {
+    text: 'Health Problems'
+},
+xAxis: {
+    categories: (function() {
+        var categories = [];
+        for (var i = 0; i < dates.length; i++) {
+            categories.push(dates[i]);
+        }
+
+        return categories;
+    }()),
+    crosshair: true
+},
+yAxis: {
+    min: 0,
+    title: {
+        text: 'Rates'
+    }
+},
+tooltip: {
+    headerFormat: '<span style="font-size:10px">{point.key}</span><table>',
+    pointFormat: '<tr><td style="color:{series.color};padding:0">{series.name}: </td>' +
+        '<td style="padding:0"><b>{point.y:.1f} mm</b></td></tr>',
+    footerFormat: '</table>',
+    shared: true,
+    useHTML: true
+},
+plotOptions: {
+    column: {
+        pointPadding: 0.2,
+        borderWidth: 0
+    }
+},
+series: [{
+    name: 'Sleep Problem',
+    data: (function() {
+        var dataRates = [];
+        for (var i = 0; i < rates.length; i++) {
+            dataRates.push(rates[i]);
+        }
+
+        return dataRates;
+    }()),
+
+},]
+});
+</script>
