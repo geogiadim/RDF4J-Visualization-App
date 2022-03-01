@@ -17,19 +17,19 @@
                     <div class="card-body">
                         <form action='' method="POST" id="data-series-form"> {% csrf_token %}
                             <div class="row">
-                                <div class="d-flex flex-column col-sm-12 col-md-3">
+                                <div class="d-flex flex-column col-sm-12 col-md-4">
                                     <label for="patient_selector">Patient*</label>
                                     <select class="selectpicker form-control" name="patient_selector" id="patient_selector" data-live-search="true" required>
                                     </select>
                                 </div>
-                                <div class="d-flex flex-column col-sm-12 col-md-3">
-                                    <label for="problem_selector">Problem Type*</label>
-                                    <select class="selectpicker form-control" name="problem_selector" id="problem_selector" data-live-search="true" data-selected-text-format="count > 2" multiple required>
-                                        <option value="sleep">Sleep Problem</option>
-                                        <option value="movement">Movement Problem</option>
-                                        <option value="heartrate">Heartrate Problem</option>
-                                    </select>
-                                </div>
+{#                                <div class="d-flex flex-column col-sm-12 col-md-3">#}
+{#                                    <label for="problem_selector">Problem Type*</label>#}
+{#                                    <select class="selectpicker form-control" name="problem_selector" id="problem_selector" data-live-search="true" data-selected-text-format="count > 2" multiple required>#}
+{#                                        <option value="sleep">Sleep Problem</option>#}
+{#                                        <option value="movement">Movement Problem</option>#}
+{#                                        <option value="heartrate">Heartrate Problem</option>#}
+{#                                    </select>#}
+{#                                </div>#}
                                 <div class="d-flex flex-column col-sm-12 col-md-3">
                                     <label for="date_picker">Date Range*</label>
                                     <input type="date" class="form-control" id="date_picker" name="date_picker" required>
@@ -198,7 +198,6 @@
         $("#data-series-form").submit(function (e) {
             e.preventDefault();
             user_value = $('#patient_selector').val();
-            problem_values = $('#problem_selector').val();
             date_range = $('#date_picker').val();
             end_date_range = $('#end_date_picker').val();
             patients = [];
@@ -207,13 +206,13 @@
             problems = [];
             getProblemsData();
             setTimeout(function () {
-                renderCharts(user_value, problem_values, date_range, end_date_range,'sleep-problems');
+                renderCharts(user_value, date_range, end_date_range,'sleep-problems');
             }, 250);
             setTimeout(function () {
-                renderCharts(user_value, problem_values, date_range, end_date_range,'heartRate-problems');
+                renderCharts(user_value, date_range, end_date_range,'heartRate-problems');
             }, 250);
             setTimeout(function () {
-                renderCharts(user_value, problem_values, date_range, end_date_range,'movement-problems');
+                renderCharts(user_value, date_range, end_date_range,'movement-problems');
             }, 250);
 
         });
@@ -224,11 +223,11 @@
 
         const CancelToken = axios.CancelToken;
         let cancel;
-        async function renderCharts(user_value, problem_values, date_range, end_date_range,model) {
+        async function renderCharts(user_value, date_range, end_date_range,model) {
             try {
                 window[model + '-container'].html('<div class="card p-5 my-3"><div class="card-body"><div class="d-flex justify-content-center align-items-center "><div class="spinner-grow" style="color: #17a2b8; width: 5rem; height: 5rem;" role="status"><span class="sr-only">Loading...</span></div></div></div></div>')
 
-                paramss = `?userVal=${user_value}&probVal=${problem_values}&startDate=${date_range}&endDate=${end_date_range}&model=${model}&problems=${problems}&rates=${rates}&dates=${dates}&patients=${patients}`
+                paramss = `?userVal=${user_value}&startDate=${date_range}&endDate=${end_date_range}&model=${model}&problems=${problems}&rates=${rates}&dates=${dates}&patients=${patients}`
 
                 if (model === 'sleep-problems')
                     response = await axios.get("{% url 'chart-render' %}" + paramss, {
@@ -248,7 +247,6 @@
                             cancel = c;
                         })
                     });
-
 
                 window[model + '-container'].html(response.data);
                 $('canvas').height('500px');
