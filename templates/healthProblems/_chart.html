@@ -49,6 +49,79 @@
 </div>
 
 <script>
+var configPlotLines;
+{% if model == 'sleep-problems' %}
+    configPlotLines = [{
+                color: '#90ed7d',
+                dashStyle: 'dot',
+                width: 2,
+                value: 85,
+                label: {
+                    align: 'right',
+                    style: {
+                        fontStyle: 'italic'
+                    },
+                    text: 'Min sleep quality',
+                },
+                zIndex: 4
+            },{
+                color: '#434348',
+                dashStyle: 'dot',
+                width: 2,
+                value: 370,
+                label: {
+                    align: 'right',
+                    style: {
+                        fontStyle: 'italic'
+                    },
+                    text: 'Min sleep time',
+                },
+                zIndex: 4
+            },{
+                color: '#7cb5ec',
+                dashStyle: 'dot',
+                width: 2,
+                value: 480,
+                label: {
+                    align: 'right',
+                    style: {
+                        fontStyle: 'italic'
+                    },
+                    text: 'Max sleep time',
+                },
+                zIndex: 4
+            },]
+{% elif model == 'heartRate-problems' %}
+    configPlotLines = [{
+                color: '#DB7093',
+                dashStyle: 'dot',
+                width: 2,
+                value: 60,
+                label: {
+                    align: 'right',
+                    style: {
+                        fontStyle: 'italic'
+                    },
+                    text: 'Min heart rate',
+                },
+                zIndex: 4
+            },]
+{% elif model == 'movement-problems' %}
+        configPlotLines = [{
+                color: '#f7a35c',
+                dashStyle: 'dot',
+                width: 2,
+                value: 500,
+                label: {
+                    align: 'right',
+                    style: {
+                        fontStyle: 'italic'
+                    },
+                    text: 'Min steps',
+                },
+                zIndex: 4
+            },]
+{% endif %}
 window['{{model}}'] = document.getElementById("{{model}}-chart-container");
 
 
@@ -70,7 +143,8 @@ window['{{model}}'] = document.getElementById("{{model}}-chart-container");
             min: 0,
             title: {
                 text: 'Rates'
-            }
+            },
+            plotLines: configPlotLines,
         },
         legend: {
             reversed: false,
@@ -89,12 +163,14 @@ window['{{model}}'] = document.getElementById("{{model}}-chart-container");
             enabled:false
         },
         tooltip: {
-            headerFormat: '<span style="font-size:10px">{point.key}</span><table>',
+            headerFormat: '<span style="font-size:10px;">{point.key}</span><table>',
             pointFormat: '<tr><td style="color:{series.color};padding:0">{series.name}: </td>' +
-                '<td style="padding:0"><b>{point.y:.3f}</b></td></tr>',
+                '<td style="padding:0"><b>{point.y:.2f}</b></td></tr>',
             footerFormat: '</table>',
             shared: true,
-            useHTML: true
+            useHTML: true,
+            backgroundColor: 'rgba(255,255,255,1)',
+            zIndex: 100
         },
         plotOptions: {
             column: {
@@ -117,11 +193,13 @@ window['{{model}}'] = document.getElementById("{{model}}-chart-container");
         {% elif model == 'heartRate-problems'%}
         {
             name: 'Low Heart Rate',
+            color: '#DB7093',
             data: [{% for prob in lowHR %}{{ prob }},{% endfor %}],
         },
         {% elif model == 'movement-problems' %}
         {
             name: 'Lack of Movement',
+            color: '#f7a35c',
             data: [{% for prob in lackOfMovement %}{{ prob }},{% endfor %}],
         },
         {% endif %}
