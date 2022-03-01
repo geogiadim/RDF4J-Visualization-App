@@ -22,20 +22,12 @@
                                     <select class="selectpicker form-control" name="patient_selector" id="patient_selector" data-live-search="true" required>
                                     </select>
                                 </div>
-{#                                <div class="d-flex flex-column col-sm-12 col-md-3">#}
-{#                                    <label for="problem_selector">Problem Type*</label>#}
-{#                                    <select class="selectpicker form-control" name="problem_selector" id="problem_selector" data-live-search="true" data-selected-text-format="count > 2" multiple required>#}
-{#                                        <option value="sleep">Sleep Problem</option>#}
-{#                                        <option value="movement">Movement Problem</option>#}
-{#                                        <option value="heartrate">Heartrate Problem</option>#}
-{#                                    </select>#}
-{#                                </div>#}
                                 <div class="d-flex flex-column col-sm-12 col-md-3">
                                     <label for="date_picker">Date Range*</label>
                                     <input type="date" class="form-control" id="date_picker" name="date_picker" required>
                                 </div>
                                 <div class="d-flex align-items-end col-sm-12 col-md-3">
-                                    <input type="date" class="form-control" id="end_date_picker" name="end_date_picker" required>
+                                    <input type="date" class="form-control" id="end_date_picker" name="end_date_picker" min="" required>
                                 </div>
                             </div>
                             <div class="form-row float-end mt-3">
@@ -62,6 +54,9 @@
     <script src="https://code.highcharts.com/modules/export-data.js"></script>
     <script src="https://code.highcharts.com/modules/accessibility.js"></script>
     <script>
+        $("#date_picker").change(function (e) {
+            $("#end_date_picker").attr({"min" : $("#date_picker").val()});
+        });
         // init selectpicker usability
         const selectPicker = $('.selectpicker');
         $(function() {
