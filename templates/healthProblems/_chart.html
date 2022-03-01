@@ -50,69 +50,81 @@
 
 <script>
 window['{{model}}'] = document.getElementById("{{model}}-chart-container");
-Highcharts.chart(window['{{ model }}'], {
-    chart: {
-        type: 'column'
-    },
-    title: {
-        text: 'Health Problems'
-    },
-    xAxis: {
-        categories: (function() {
-            var categories = [];
-            for (var i = 0; i < dates.length; i++) {
-                categories.push(dates[i]);
+
+
+    Highcharts.chart(window['{{ model }}'], {
+        chart: {
+            type: 'column'
+        },
+        title:{
+          text:''
+        },
+        xAxis: {
+            categories: [{% for date in unique_dates %}'{{ date }}',{% endfor %}],
+            crosshair: true,
+            title: {
+                text: 'Dates'
             }
-
-            return categories;
-        }()),
-        crosshair: true
-    },
-    yAxis: {
-        min: 0,
-        title: {
-            text: 'Rates'
-        }
-    },
-    credits:{
-        enabled:false
-    },
-    tooltip: {
-        headerFormat: '<span style="font-size:10px">{point.key}</span><table>',
-        pointFormat: '<tr><td style="color:{series.color};padding:0">{series.name}: </td>' +
-            '<td style="padding:0"><b>{point.y:.1f} mm</b></td></tr>',
-        footerFormat: '</table>',
-        shared: true,
-        useHTML: true
-    },
-    plotOptions: {
-        column: {
-            pointPadding: 0.2,
-            borderWidth: 0
-        }
-    },
-    series: [{
-        name: 'Sleep Problem',
-        data: (function() {
-            var dataRates = [];
-            for (var i = 0; i < rates.length; i++) {
-                dataRates.push(1);
+        },
+        yAxis: {
+            min: 0,
+            title: {
+                text: 'Rates'
             }
-
-            return dataRates;
-        }()),
-
-    },{
-        name: 'Move Problem',
-        data: (function() {
-            var dataRates = [];
-            for (var i = 0; i < rates.length; i++) {
-                dataRates.push(1);
+        },
+        legend: {
+            reversed: false,
+            layout: 'horizontal',
+            align: 'center',
+            verticalAlign: 'top',
+            symbolRadius: 3,
+            itemStyle: {
+                color: '#666',
+                fontSize: '1rem',
+                fontWeight: '400',
+                fontFamily: '"Open Sans", Arial, sans-serif'
             }
-
-            return dataRates;
-        }()),
-
-    }]
-});
+        },
+        credits:{
+            enabled:false
+        },
+        tooltip: {
+            headerFormat: '<span style="font-size:10px">{point.key}</span><table>',
+            pointFormat: '<tr><td style="color:{series.color};padding:0">{series.name}: </td>' +
+                '<td style="padding:0"><b>{point.y:.3f}</b></td></tr>',
+            footerFormat: '</table>',
+            shared: true,
+            useHTML: true
+        },
+        plotOptions: {
+            column: {
+                pointPadding: 0.2,
+                borderWidth: 0
+            }
+        },
+        series: [
+        {% if model == 'sleep-problems' %}
+        {
+            name: 'Too Much Sleep',
+            data: [{% for prob in too_much_sleep %}{{ prob }},{% endfor %}],
+        },{
+            name: 'Lack Of Sleep',
+            data: [{% for prob in lack_of_sleep %}{{ prob }},{% endfor %}],
+        },{
+            name: 'Low Sleep Quality',
+            data: [{% for prob in low_quality %}{{ prob }},{% endfor %}],
+        },
+        {% elif model == 'heartRate-problems'%}
+        {
+            name: 'Low Heart Rate',
+            data: [{% for prob in lowHR %}{{ prob }},{% endfor %}],
+        },
+        {% elif model == 'movement-problems' %}
+        {
+            name: 'Lack of Movement',
+            data: [{% for prob in lackOfMovement %}{{ prob }},{% endfor %}],
+        },
+        {% endif %}
+        ]
+    });
 </script>
