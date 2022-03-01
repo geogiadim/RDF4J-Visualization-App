@@ -41,7 +41,6 @@
         {%endif%}
     </div>
     <div class="card-body">
-{#        {% for sub, atts in grouped_data.items %}{% for att in atts %}{% for event in att.event_set.all %}{{ forloop.parentloop.parentloop.counter }}{{ event.input_type }}: {{ event.duration }}<br>{% endfor %}{% endfor %}{% endfor %}#}
         <div id="{{ model }}-chart-container">
             <canvas id="{{ model }}-chart"></canvas>
         </div>
@@ -52,54 +51,68 @@
 <script>
 window['{{model}}'] = document.getElementById("{{model}}-chart-container");
 Highcharts.chart(window['{{ model }}'], {
-chart: {
-    type: 'column'
-},
-title: {
-    text: 'Health Problems'
-},
-xAxis: {
-    categories: (function() {
-        var categories = [];
-        for (var i = 0; i < dates.length; i++) {
-            categories.push(dates[i]);
-        }
-
-        return categories;
-    }()),
-    crosshair: true
-},
-yAxis: {
-    min: 0,
+    chart: {
+        type: 'column'
+    },
     title: {
-        text: 'Rates'
-    }
-},
-tooltip: {
-    headerFormat: '<span style="font-size:10px">{point.key}</span><table>',
-    pointFormat: '<tr><td style="color:{series.color};padding:0">{series.name}: </td>' +
-        '<td style="padding:0"><b>{point.y:.1f} mm</b></td></tr>',
-    footerFormat: '</table>',
-    shared: true,
-    useHTML: true
-},
-plotOptions: {
-    column: {
-        pointPadding: 0.2,
-        borderWidth: 0
-    }
-},
-series: [{
-    name: 'Sleep Problem',
-    data: (function() {
-        var dataRates = [];
-        for (var i = 0; i < rates.length; i++) {
-            dataRates.push(rates[i]);
+        text: 'Health Problems'
+    },
+    xAxis: {
+        categories: (function() {
+            var categories = [];
+            for (var i = 0; i < dates.length; i++) {
+                categories.push(dates[i]);
+            }
+
+            return categories;
+        }()),
+        crosshair: true
+    },
+    yAxis: {
+        min: 0,
+        title: {
+            text: 'Rates'
         }
+    },
+    credits:{
+        enabled:false
+    },
+    tooltip: {
+        headerFormat: '<span style="font-size:10px">{point.key}</span><table>',
+        pointFormat: '<tr><td style="color:{series.color};padding:0">{series.name}: </td>' +
+            '<td style="padding:0"><b>{point.y:.1f} mm</b></td></tr>',
+        footerFormat: '</table>',
+        shared: true,
+        useHTML: true
+    },
+    plotOptions: {
+        column: {
+            pointPadding: 0.2,
+            borderWidth: 0
+        }
+    },
+    series: [{
+        name: 'Sleep Problem',
+        data: (function() {
+            var dataRates = [];
+            for (var i = 0; i < rates.length; i++) {
+                dataRates.push(1);
+            }
 
-        return dataRates;
-    }()),
+            return dataRates;
+        }()),
 
-},]
+    },{
+        name: 'Move Problem',
+        data: (function() {
+            var dataRates = [];
+            for (var i = 0; i < rates.length; i++) {
+                dataRates.push(1);
+            }
+
+            return dataRates;
+        }()),
+
+    }]
 });
 </script>

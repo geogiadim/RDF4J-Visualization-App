@@ -17,14 +17,12 @@
                     <div class="card-body">
                         <form action='' method="POST" id="data-series-form"> {% csrf_token %}
                             <div class="row">
-                                <div class="d-flex flex-column col-sm-12 col-md-4">
+                                <div class="d-flex flex-column col-sm-12 col-md-3">
                                     <label for="patient_selector">Patient*</label>
                                     <select class="selectpicker form-control" name="patient_selector" id="patient_selector" data-live-search="true" required>
-                                        <option value="TMS6"> TMS6</option>
-                                        <option value="TMS7"> TMS7</option>
                                     </select>
                                 </div>
-                                <div class="d-flex flex-column col-sm-12 col-md-4">
+                                <div class="d-flex flex-column col-sm-12 col-md-3">
                                     <label for="problem_selector">Problem Type*</label>
                                     <select class="selectpicker form-control" name="problem_selector" id="problem_selector" data-live-search="true" data-selected-text-format="count > 2" multiple required>
                                         <option value="sleep">Sleep Problem</option>
@@ -32,23 +30,23 @@
                                         <option value="heartrate">Heartrate Problem</option>
                                     </select>
                                 </div>
-                                <div class="d-flex flex-column col-sm-12 col-md-4">
+                                <div class="d-flex flex-column col-sm-12 col-md-3">
                                     <label for="date_picker">Date Range*</label>
                                     <input type="date" class="form-control" id="date_picker" name="date_picker" required>
+                                </div>
+                                <div class="d-flex align-items-end col-sm-12 col-md-3">
+                                    <input type="date" class="form-control" id="end_date_picker" name="end_date_picker" required>
                                 </div>
                             </div>
                             <div class="form-row float-end mt-3">
                                 <div class="col-sm-12">
+                                    <button class="btn btn-success" type="button" name="get-patients" id="get-patients">Get Patients</button>
                                     <button class="btn btn-primary" type="submit" name="graphdb-button" id="graphdb-button">PLOT</button>
                                 </div>
                             </div>
                         </form>
                     </div>
                 </div>
-
-{#                <figure class="highcharts-figure">#}
-{#                    <div id="container-chart"></div>#}
-{#                </figure>#}
 
                 <div id='sleep-problems-container' class="col-sm-12 p-0 m-0" style='min-height: 200px;'></div>
                 <div id='heartRate-problems-container' class="col-sm-12 p-0 m-0" style='min-height: 200px;'></div>
@@ -64,14 +62,17 @@
     <script src="https://code.highcharts.com/modules/export-data.js"></script>
     <script src="https://code.highcharts.com/modules/accessibility.js"></script>
     <script>
+        // init selectpicker usability
         const selectPicker = $('.selectpicker');
         $(function() {
             selectPicker.selectpicker();
         });
 
+        // set URIs
         const patientURI = "http://www.semanticweb.org/patient-observations#";
         const problemURI = "http://www.semanticweb.org/patient-observations#";
 
+        // select problems query
         var selectProblemsQuery = "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n" +
                     "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n" +
                     "PREFIX pob1: <http://www.semanticweb.org/patient-observations/1.0.0#> \n" +
@@ -81,40 +82,96 @@
                     "PREFIX xml: <http://www.w3.org/XML/1998/namespace>\n" +
                     "SELECT *\n" +
                     "WHERE{\n" +
-                    "    ?problem a pob:SleepProblem;\n" +
+                    "    ?problem a pob:HealthProblem;\n" +
                     "       pob:isProblemOf ?patient;\n" +
                     "       pob:rate ?rate;\n" +
                     "       sosa:resultTime ?date.\n" +
                     "}";
 
-        var getData = {
-            query: selectProblemsQuery,
-            infer: true,
-            sameAs: true,
-            limit: 1000,
-            offset: 0
-        }
+        // select patients query
+        var getPatients = "PREFIX pob: <http://www.semanticweb.org/patient-observations#>\n" +
+                        "select DISTINCT * where {\n" +
+                        "   ?patient a pob:Patient .\n" +
+                        "}";
 
+        // GraphDB repository connection url
         var endpoint = "http://localhost/repositories/rdf4j-repo";
-        $("#graphdb-button").click(function (e) {
+        // ajax query in order to get available patients in graphdb
+        $("#get-patients").click(function (e) {
             $.ajax({
                 type: 'GET',
                 url: endpoint,
-                data: getData,
+                data: {
+                    query: getPatients,
+                    infer: true,
+                    sameAs: true,
+                    limit: 1000,
+                    offset: 0
+                },
                 contentType: "application/rdf+json",
                 crossDomain: true,
                 success: function (data) {
-                    console.log(data);
-                    processData(data);
+                    processPatientsData(data);
                 },
                 error: function (response) {
                 }
             });
         });
+        // set user-selector
+        const userSelector = $('#patient_selector');
+        // process and get clean data for patients
+        function processPatientsData(allText){
+            var allTextLines = allText.split(/\r\n|\n/);
+            var lines = [];
+            var patients2 = [];
+            for(let i=1; i<allTextLines.length;i++){
+                lines.push(allTextLines[i].split(','));
+            }
+
+            for(let i=0; i<lines.length-1;i++){
+                lines[i] = lines[i][0].replace(patientURI,'');
+                patients2.push(lines[i]);
+                update_user_selector_options(patients2)
+            }
+        }
+        function update_user_selector_options(available_ids){
+            userSelector.find('option').remove();
+            userSelector.selectpicker('refresh');
+            for(var i=0; i<available_ids.length;i++){
+                userSelector.append($('<option>', {
+                    value: available_ids[i],
+                    text: available_ids[i]
+                }));
+                userSelector.selectpicker('refresh');
+            }
+        }
+
+        // ajax query in order to get all patients' problems in graphdb
+        function getProblemsData() {
+            $.ajax({
+                type: 'GET',
+                url: endpoint,
+                data: {
+                    query: selectProblemsQuery,
+                    infer: true,
+                    sameAs: true,
+                    limit: 1000,
+                    offset: 0
+                },
+                contentType: "application/rdf+json",
+                crossDomain: true,
+                success: function (data) {
+                    processData(data);
+                },
+                error: function (response) {
+                }
+            });
+        }
         var patients = [];
         var rates = [];
         var dates = [];
-
+        var problems = [];
+        // process and get clean data for problems
         function processData(allText) {
             var allTextLines = allText.split(/\r\n|\n/);
             var lines = [];
@@ -126,24 +183,37 @@
             for(let i=0; i<lines.length-1;i++){
                 lines[i][1] = lines[i][1].replace(patientURI,'');
                 lines[i][0] = lines[i][0].replace(problemURI,'');
+                lines[i][0] = lines[i][0].substr(0, lines[i][0].indexOf('_'));
                 patients.push(lines[i][1]);
                 rates.push(parseFloat(lines[i][2]));
                 dates.push(lines[i][3]);
+                problems.push(lines[i][0])
             }
-
-            for(let i=0; i<patients.length;i++){
-                console.log(patients[i], rates[i], dates[i])
+            for(let i=0; i<lines.length-1;i++){
+                console.log(lines[i]);
             }
         }
 
-        // handle form submition
+        // handle form submission
         $("#data-series-form").submit(function (e) {
             e.preventDefault();
             user_value = $('#patient_selector').val();
             problem_values = $('#problem_selector').val();
             date_range = $('#date_picker').val();
+            end_date_range = $('#end_date_picker').val();
+            patients = [];
+            rates = [];
+            dates = [];
+            problems = [];
+            getProblemsData();
             setTimeout(function () {
-                renderCharts(user_value, problem_values, date_range, 'sleep-problems');
+                renderCharts(user_value, problem_values, date_range, end_date_range,'sleep-problems');
+            }, 250);
+            setTimeout(function () {
+                renderCharts(user_value, problem_values, date_range, end_date_range,'heartRate-problems');
+            }, 250);
+            setTimeout(function () {
+                renderCharts(user_value, problem_values, date_range, end_date_range,'movement-problems');
             }, 250);
 
         });
@@ -154,11 +224,11 @@
 
         const CancelToken = axios.CancelToken;
         let cancel;
-        async function renderCharts(user_value, problem_values, date_range, model) {
+        async function renderCharts(user_value, problem_values, date_range, end_date_range,model) {
             try {
                 window[model + '-container'].html('<div class="card p-5 my-3"><div class="card-body"><div class="d-flex justify-content-center align-items-center "><div class="spinner-grow" style="color: #17a2b8; width: 5rem; height: 5rem;" role="status"><span class="sr-only">Loading...</span></div></div></div></div>')
 
-                paramss = `?userVal=${user_value}&probVal=${problem_values}&dateRange=${date_range}&model=${model}`
+                paramss = `?userVal=${user_value}&probVal=${problem_values}&startDate=${date_range}&endDate=${end_date_range}&model=${model}&problems=${problems}&rates=${rates}&dates=${dates}&patients=${patients}`
 
                 if (model === 'sleep-problems')
                     response = await axios.get("{% url 'chart-render' %}" + paramss, {
@@ -187,6 +257,5 @@
                 console.log(error);
             }
         }
-
     </script>
 {% endblock %}
